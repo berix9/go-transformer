@@ -49,7 +49,7 @@ func (m *megatron) Error() error {
 	return m.Err
 }
 
-//parse
+//
 func (m *megatron) SetOutputFile(f string, alsoStdout bool) *megatron {
 	if m.occurError() {
 		return m
@@ -142,7 +142,7 @@ func (m *megatron) mergeOptions() *option {
 			opt.Recursive = true
 		}
 		if op.StructName != "" {
-			name := utils.UpperWords(op.StructName)
+			name := utils.SnakeToCamel(op.StructName)
 			opt.StructName = name
 		}
 		if len(op.Writers) > 0 {
@@ -160,8 +160,8 @@ func (m *megatron) mergeOptions() *option {
 }
 
 /*
-convert map to struct string
-	m: the map after unmarshal
+convert map to struct text. If there are nested structs, get them all.
+	m: the map after first unmarshal
 */
 func mapToStruct(buffer *bytes.Buffer, m map[string]interface{}, opt *option) error {
 	opt.StructName = opt.StructName[strings.LastIndex(opt.StructName, "]")+1:]
@@ -205,7 +205,7 @@ func mapToStruct(buffer *bytes.Buffer, m map[string]interface{}, opt *option) er
 					typeValue = "[]string"
 				case map[interface{}]interface{}:
 					if opt.Recursive {
-						typeValue = utils.UpperWords(k)
+						typeValue = utils.SnakeToCamel(k)
 						m := make(map[string]interface{})
 						for tk, tv := range nv.(map[interface{}]interface{}) {
 							m[fmt.Sprintf("%v", tk)] = tv
@@ -215,7 +215,7 @@ func mapToStruct(buffer *bytes.Buffer, m map[string]interface{}, opt *option) er
 						typeValue = "[]interface{}"
 					}
 				default:
-					typeValue = fmt.Sprintf("[]%s", utils.UpperWords(k))
+					typeValue = fmt.Sprintf("[]%s", utils.SnakeToCamel(k))
 					objs[typeValue] = v.([]interface{})[0]
 				}
 			} else {
@@ -225,7 +225,7 @@ func mapToStruct(buffer *bytes.Buffer, m map[string]interface{}, opt *option) er
 			//if value is object and recursive-option is true,
 			// 	use key as nested-struct name, and save value into the map waiting to be process recursively.
 			if opt.Recursive {
-				typeValue = utils.UpperWords(k)
+				typeValue = utils.SnakeToCamel(k)
 				objs[typeValue] = v
 			} else {
 				typeValue = "interface{}"
@@ -234,7 +234,7 @@ func mapToStruct(buffer *bytes.Buffer, m map[string]interface{}, opt *option) er
 			//if value is object and recursive-option is true,
 			// 	use key as nested-struct name, and save value into the map waiting to be process recursively.
 			if opt.Recursive {
-				typeValue = utils.UpperWords(k)
+				typeValue = utils.SnakeToCamel(k)
 				m := make(map[string]interface{})
 				for tk, tv := range v.(map[interface{}]interface{}) {
 					m[fmt.Sprintf("%v", tk)] = tv
@@ -246,7 +246,7 @@ func mapToStruct(buffer *bytes.Buffer, m map[string]interface{}, opt *option) er
 		default:
 			typeValue = "interface{}"
 		}
-		upKey := utils.UpperWords(k)
+		upKey := utils.SnakeToCamel(k)
 		descText := fmt.Sprintf("`json:\"%s\"`", k)
 		buffer.WriteString(fmt.Sprintf("    %s %s %s\n", upKey, typeValue, descText))
 	}

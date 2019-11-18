@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"go-transformer/megatron"
 	"go-transformer/optimus"
+	"go-transformer/utils"
 	"io/ioutil"
 )
 
 func main() {
 	//json2struct()
-	yaml2struct()
+	//yaml2struct()
 	//struct2ToJson()
+	genJsonKey("IDUserNameStop")
 }
 
 func yaml2struct() {
@@ -62,14 +64,14 @@ func json2struct() {
 }
 `
 
-	//设置输出到文件
-	/*if e := megatron.NewMegatron(str, megatron.Json_to_struct).
+	//设置输出到文件[SetXxxx方法均为可选]
+	if e := megatron.NewMegatron(str, megatron.Json_to_struct).
 		SetOutputFile("/Users/yangsen/Documents/go-ys/src/go-transformer/examples/a/b", true).
 		SetOptionRecursive().SetStructName("Mega").ToStruct().Error(); e != nil {
 		fmt.Println("error:", e)
 		return
-	}*/
-	//默认输出到标准输出
+	}
+	//默认输出到标准输出[SetXxxx方法均为可选]
 	if e := megatron.NewMegatron(str, megatron.Json_to_struct).SetOptionRecursive().SetStructName("Mega").
 		ToStruct().Error(); e != nil {
 		fmt.Println("error:", e)
@@ -82,5 +84,8 @@ func struct2ToJson() {
 	str := string(f)
 
 	fmt.Println(optimus.StructsToJson(str))
+}
 
+func genJsonKey(s string) {
+	fmt.Println(utils.CamelToSnake(s))
 }

@@ -105,7 +105,7 @@ convert map to struct string
 			//if value is object and recursive-option is true,
 			// 	use key as nested-struct name, and save value into the map waiting to be process recursively.
 			if opt.Recursive {
-				typeValue = utils.UpperWords(k)
+				typeValue = utils.SnakeToCamel(k)
 				objs[typeValue] = v
 			} else {
 				typeValue = "interface{}"
@@ -128,7 +128,7 @@ convert map to struct string
 				case string:
 					typeValue = "[]string"
 				default:
-					typeValue = fmt.Sprintf("[]%s", utils.UpperWords(k))
+					typeValue = fmt.Sprintf("[]%s", utils.SnakeToCamel(k))
 					objs[typeValue] = v.([]interface{})[0]
 				}
 			} else {
@@ -137,7 +137,7 @@ convert map to struct string
 		default:
 			typeValue = "interface{}"
 		}
-		upKey := utils.UpperWords(k)
+		upKey := utils.SnakeToCamel(k)
 		descText := fmt.Sprintf("`json:\"%s\"`", k)
 		buffer.WriteString(fmt.Sprintf("    %s %s %s\n", upKey, typeValue, descText))
 	}

@@ -1,4 +1,4 @@
-module go-conv
+module go-transformer
 
 go 1.13
 

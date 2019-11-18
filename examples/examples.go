@@ -62,6 +62,7 @@ func json2struct() {
 }
 `
 	s, e := megatron.Json2Struct(str, &megatron.Option{"", true})
+
 	if e != nil {
 		fmt.Println("error:", e)
 		return

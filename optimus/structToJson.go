@@ -2,6 +2,7 @@ package optimus
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +14,8 @@ import (
 )
 
 const (
-	unknown = "unknown"
+	unknown            = "unknown"
+	specific_value_tag = "#eg#"
 )
 
 type object struct {
@@ -42,10 +44,10 @@ func StructsToJson(str string) string {
 		panic(err)
 	}
 	structMaps := convertStructsToMap(objs)
-	return linkStructMaps(structMaps)
+	return mergeStructMaps(structMaps)
 }
 
-func linkStructMaps(maps map[string]map[string]interface{}) string {
+func mergeStructMaps(maps map[string]map[string]interface{}) string {
 	var subed []string
 	result := make(map[string]interface{})
 	for structName, m := range maps {
@@ -57,6 +59,9 @@ func linkStructMaps(maps map[string]map[string]interface{}) string {
 					k := strings.Split(filedKey, ".")
 					if subObj, ok := maps[strings.TrimPrefix(k[1], "[]")]; ok {
 						m[k[0]] = subObj
+						if strings.HasPrefix(k[1], "[]") {
+							m[k[0]] = []interface{}{subObj}
+						}
 						delete(m, filedKey)
 						//result[structName] = m
 						subed = append(subed, strings.TrimPrefix(k[1], "[]"))
@@ -76,8 +81,17 @@ func linkStructMaps(maps map[string]map[string]interface{}) string {
 			}
 		}
 	}
-	by, _ := json.MarshalIndent(result, "", "    ")
-	return string(by)
+	buf := bytes.Buffer{}
+	moreThanOne := false
+	for _, v := range result {
+		if moreThanOne {
+			buf.WriteString("\n\n********************************\n\n")
+		}
+		by, _ := json.MarshalIndent(v, "", "    ")
+		buf.Write(by)
+		moreThanOne = true
+	}
+	return buf.String()
 }
 
 func convertStructsToMap(objs []*object) map[string]map[string]interface{} {
@@ -112,6 +126,7 @@ func convertStructsToMap(objs []*object) map[string]map[string]interface{} {
 func splitStructs(reader *bufio.Reader, obj *object, parentKey string, nested bool) ([]*object, error) {
 	obj.ParentKey = parentKey
 	objects := make([]*object, 0, 1)
+	multiComment := false
 	for {
 		lineBys, _, err := reader.ReadLine()
 		if err != nil {
@@ -123,9 +138,20 @@ func splitStructs(reader *bufio.Reader, obj *object, parentKey string, nested bo
 		}
 		line := string(lineBys)
 		//fmt.Println("line:", line, line == "")
-		if len(line) < 1 {
+
+		//handle multi-lines comments and blank line
+		if strings.HasPrefix(line, "/*") {
+			multiComment = true
 			continue
 		}
+		if strings.HasSuffix(line, "*/") {
+			multiComment = false
+			continue
+		}
+		if len(line) < 1 || strings.HasPrefix(line, "//") || multiComment {
+			continue
+		}
+
 		//new struct: especially for nested struct
 		if !strings.Contains(line, "type ") && strings.Contains(line, "{") {
 			newObj := new(object)
@@ -171,7 +197,7 @@ func (obj *object) parseLine(line string) {
 	arr := splitFields(line)
 	var f field
 	if len(arr) < 2 {
-		panic(errors.New(fmt.Sprintf("invalid struct field:%s", line)), )
+		panic(errors.New(fmt.Sprintf("invalid struct field:%s", line)))
 	}
 	f.JsonKey = arr[0]
 	f.Tp = arr[1]
@@ -386,8 +412,9 @@ func splitFields(line string) []string {
 	line = strings.TrimSpace(utils.DeleteExtraSpace(line))
 	arr := make([]string, 0, 4)
 	ta := strings.Split(line, "//")
-	if len(ta) > 1 {
+	if len(ta) > 1 && strings.Contains(ta[len(ta)-1], specific_value_tag) {
 		value = strings.TrimSpace(ta[len(ta)-1])
+		value = strings.TrimSpace(value[strings.LastIndex(value, specific_value_tag)+4:])
 	}
 	line = strings.TrimSpace(ta[0])
 

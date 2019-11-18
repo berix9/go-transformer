@@ -1,0 +1,17 @@
+type Root struct {
+    users []User `json:"users"`
+}
+
+type User struct {
+    ID int64 `json:"id"`
+    NameLoc string `json:"name_loc"`
+    Vip bool `json:"vip"`
+    Rate []int `json:"rate"`
+    Friends []Friends `json:"friends"`
+    Age int `json:"age"`
+}
+
+type Friends struct {
+    Name string `json:"name"` // berix
+    ID int `json:"id"`
+}

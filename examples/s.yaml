@@ -1,0 +1,11 @@
+- name_loc: ss
+  age: 18
+  vip: true
+  friends:
+  - name: ys
+    gender: 男
+    age: 33
+    sub_sub_struct:
+      name: ys
+      gender: 男
+      age: 33

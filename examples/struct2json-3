@@ -1,0 +1,41 @@
+//指定json字段值，使用#eg#标签，该标签及其值应置于注释末尾，否则会导致解析错误
+type Model struct {
+	Name     string            `json:"name" bson:"name"` //一般注释，指定值->  #eg#my name
+	Creator  string            `json:"creator" bson:"creator"`
+	Labels   []string          `json:"labels" bson:"labels"`
+	Versions []ModelSubVersion `json:"versions" bson:"versions"`
+}
+
+//some comment
+type ModelSubVersion struct {
+	Version          int         `json:"version" bson:"version"`
+	OriginalFilePath string      `json:"originalFilePath" bson:"originalFilePath"`
+	Volume           VolumeClaim `json:"volume" bson:"volume"`
+	FilePath         string      `json:"filePath" bson:"filePath"`
+	Summary          SummarySpec `json:"summary" bson:"summary"`
+	Desc             string      `json:"desc" bson:"desc"`
+}
+
+/*
+start
+multi-comment
+end
+*/
+type Example struct {
+	Address []struct {
+		City          string `json:"city"`          // New York
+		PostalCode    string `json:"postalCode"`    // 10021
+		State         string `json:"state"`         // NY
+		StreetAddress string `json:"streetAddress"` // 21 2nd Street
+	} `json:"address"`
+	Age         int64   `json:"age"`       // 25
+	Balance     float64 `json:"balance"`   // 123.45
+	FirstName   string  `json:"firstName"` // John
+	LastName    string  `json:"lastName"`  // Smith
+	PhoneNumber []struct {
+		LastCall string `json:"last_call"` // 2013-01-10T05:27:07Z
+		Number   string `json:"number"`    // 212 555-1234
+		Type     string `json:"type"`      // home
+	} `json:"phoneNumber"`
+	Tags []string `json:"tags"` // #eg# ["ms","ic"]
+}

@@ -1,0 +1,18 @@
+type Example struct {
+	Address []struct {
+		City          string `json:"city"`          // New York
+		PostalCode    string `json:"postalCode"`    // 10021
+		State         string `json:"state"`         // NY
+		StreetAddress string `json:"streetAddress"` // 21 2nd Street
+	} `json:"address"`
+	Age         int64   `json:"age"`       // 25
+	Balance     float64 `json:"balance"`   // 123.45
+	FirstName   string  `json:"firstName"` // John
+	LastName    string  `json:"lastName"`  // Smith
+	PhoneNumber []struct {
+		LastCall string `json:"last_call"` // 2013-01-10T05:27:07Z
+		Number   string `json:"number"`    // 212 555-1234
+		Type     string `json:"type"`      // home
+	} `json:"phoneNumber"`
+	Tags []string `json:"tags"` // ["ms","ic"]
+}

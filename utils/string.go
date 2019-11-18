@@ -23,15 +23,15 @@ func CamelToSnake(name string) string {
 	buf := bytes.Buffer{}
 	firstWord := true
 	for _, r := range name {
-		fmt.Println(string(r), lastCaped, firstWord)
 		if r >= 65 && r <= 90 { //caped letter
+			//two continuous capital letters will be regarded as one word
 			if lastCaped {
 				buf.WriteRune(r + 32)
 				words = append(words, buf.String())
 				buf.Reset()
 				lastCaped = false
 			} else {
-				if !firstWord {
+				if !firstWord && buf.Len() > 0 {
 					fmt.Println(string(r + 32))
 					words = append(words, buf.String())
 					buf.Reset()

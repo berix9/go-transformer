@@ -192,7 +192,6 @@ func (obj *object) parseLine(line string) {
 		return
 	} else if strings.Contains(line, "}") {
 		obj.getJsonKey(line)
-		//todo: field does not have a json tag, generate one
 		return
 	}
 	// the field of struct
@@ -206,7 +205,8 @@ func (obj *object) parseLine(line string) {
 	f.Tp = arr[1]
 	if len(arr) > 2 && (strings.Contains(arr[2], "json:") || strings.Contains(arr[2], "json :")) {
 		f.getJsonKey(arr[2])
-		//todo: field does not have a json tag, generate one
+	} else {
+		f.JsonKey = utils.CamelToSnake(f.JsonKey)
 	}
 	if len(arr) > 3 {
 		f.Value = arr[3]
@@ -244,6 +244,8 @@ func (obj *object) getJsonKey(line string) {
 	k := doGetJsonTag(line)
 	if len(k) > 0 {
 		obj.JsonKey = k
+	} else {
+		obj.JsonKey = utils.CamelToSnake(obj.Name)
 	}
 }
 

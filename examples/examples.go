@@ -11,8 +11,8 @@ import (
 func main() {
 	//json2struct()
 	//yaml2struct()
-	//struct2ToJson()
-	genJsonKey("IDUserNameStop")
+	struct2ToJson()
+	//genJsonKey("IDUserNameIDStop")
 }
 
 func yaml2struct() {

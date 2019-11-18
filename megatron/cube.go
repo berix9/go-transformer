@@ -17,10 +17,10 @@ const (
 )
 
 type megatron struct {
-	Content  string
-	Tp       int
-	error    error
-	optinons []*option
+	Content string
+	Tp      int
+	Err     error
+	Options []*option
 }
 
 type option struct {
@@ -34,19 +34,19 @@ func NewMegatron(content string, tp int) *megatron {
 }
 
 func (m *megatron) SetStructName(structName string) *megatron {
-	m.optinons = append(m.optinons, &option{StructName: structName})
+	m.Options = append(m.Options, &option{StructName: structName})
 	return m
 }
 
 //
 func (m *megatron) SetOptionRecursive() *megatron {
-	m.optinons = append(m.optinons, &option{Recursive: true})
+	m.Options = append(m.Options, &option{Recursive: true})
 	return m
 }
 
 //
 func (m *megatron) Error() error {
-	return m.error
+	return m.Err
 }
 
 //parse
@@ -82,7 +82,7 @@ func (m *megatron) SetOutputFile(f string, alsoStdout bool) *megatron {
 		writers = append(writers, os.Stdout)
 	}
 
-	m.optinons = append(m.optinons, &option{Writers: writers})
+	m.Options = append(m.Options, &option{Writers: writers})
 	return m
 }
 
@@ -137,7 +137,7 @@ func (meg *megatron) ToStruct() *megatron {
 
 func (m *megatron) mergeOptions() *option {
 	opt := &option{}
-	for _, op := range m.optinons {
+	for _, op := range m.Options {
 		if op.Recursive == true {
 			opt.Recursive = true
 		}
@@ -265,9 +265,9 @@ func mapToStruct(buffer *bytes.Buffer, m map[string]interface{}, opt *option) er
 }
 
 func (m *megatron) setError(e error) {
-	m.error = e
+	m.Err = e
 }
 
 func (m *megatron) occurError() bool {
-	return m.error != nil
+	return m.Err != nil
 }

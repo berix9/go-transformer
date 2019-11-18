@@ -1,31 +1,51 @@
 package megatron
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"go-transformer/utils"
 	"gopkg.in/yaml.v2"
-	"reflect"
 	"strings"
 )
 
-func YamlToStruct(yamlStr string, opts ...*Option) (string, error) {
-	opt := mergeOptions(opts)
-	yamlStr = strings.TrimSpace(yamlStr)
-	return yamlToStruct(yamlStr, opt)
+func yamlUnmarshal(content string) (map[string]interface{}, error) {
+	restMap := make(map[string]interface{})
+	m := make(map[interface{}]interface{})
+	if strings.HasPrefix(content, "-") {
+		//if array, unmarshal into map-array, then use the first object
+		maps := make([]map[interface{}]interface{}, 0, 1)
+		if err := yaml.Unmarshal([]byte(content), &maps); err != nil {
+			return restMap, err
+		}
+		if len(maps) > 0 {
+			m = maps[0]
+		} else {
+			return restMap, errors.New("the json string given has no valid content")
+		}
+	} else {
+		//unmarshal into map
+		if err := yaml.Unmarshal([]byte(content), &m); err != nil {
+			return restMap, err
+		}
+	}
+	for k, v := range m {
+		restMap[fmt.Sprintf("%v", k)] = v
+	}
+	return restMap, nil
+}
+
+/*func (m *megatron) YamlToStruct() (string, error) {
+	opt := m.mergeOptions()
+	return yamlToStruct(strings.TrimSpace(m.Content), opt)
 }
 
 //convert yaml string to struct string
-func yamlToStruct(yamlStr string, opt *Option) (res string, err error) {
+func yamlToStruct(yamlStr string, opt *option) (res string, err error) {
 	//yaml string is arry/object
 	m := make(map[interface{}]interface{})
 	if strings.HasPrefix(yamlStr, "-") {
 		//if array, unmarshal into map-array, then use the first object
 		maps := make([]map[interface{}]interface{}, 0, 1)
 		if err = yaml.Unmarshal([]byte(yamlStr), &maps); err != nil {
-			fmt.Println(yamlStr)
-			fmt.Println(1, err)
 			return
 		}
 		if len(maps) > 0 {
@@ -46,14 +66,29 @@ func yamlToStruct(yamlStr string, opt *Option) (res string, err error) {
 		return
 	}
 
+	for _, w := range opt.Writers {
+		io.Copy(w, buffer)
+		switch w.(type) {
+		case *os.File:
+			w.(*os.File).Seek(0, 0)
+			info, _ := w.(*os.File).Stat()
+			if info.Name() == "stdout" {
+				continue
+			}
+			io.Copy(buffer, w.(*os.File))
+		}
+	}
+
+
 	return buffer.String(), nil
 }
+*/
 
 /*
 convert map to struct string
 	m: the map after unmarshal
 */
-func yamlMapToStruct(buffer *bytes.Buffer, m map[interface{}]interface{}, opt *Option) error {
+/*func yamlMapToStruct(buffer *bytes.Buffer, m map[interface{}]interface{}, opt *option) error {
 	opt.StructName = opt.StructName[strings.LastIndex(opt.StructName, "]")+1:]
 	buffer.WriteString(fmt.Sprintf("type %s struct {\n", opt.StructName))
 	objs := make(map[interface{}]interface{})
@@ -110,7 +145,7 @@ func yamlMapToStruct(buffer *bytes.Buffer, m map[interface{}]interface{}, opt *O
 				typeValue = "interface{}"
 			}
 		default:
-
+			typeValue = "interface{}"
 		}
 		upKey := utils.UpperWords(k.(string))
 		descText := fmt.Sprintf("`json:\"%s\"`", k)
@@ -121,11 +156,11 @@ func yamlMapToStruct(buffer *bytes.Buffer, m map[interface{}]interface{}, opt *O
 	//process nested-struct
 	if len(objs) > 0 {
 		for k, v := range objs {
-			fmt.Println("-----", k, reflect.TypeOf(k), "---|---", v, reflect.TypeOf(v))
+			//fmt.Println("-----", k, reflect.TypeOf(k), "---|---", v, reflect.TypeOf(v))
 			opt.StructName = k.(string)
 			yamlMapToStruct(buffer, v.(map[interface{}]interface{}), opt)
 		}
 	}
 
 	return nil
-}
+}*/

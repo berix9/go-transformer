@@ -9,12 +9,12 @@ import (
 
 func main() {
 	//json2struct()
-	//yaml2struct()
-	struct2ToJson()
+	yaml2struct()
+	//struct2ToJson()
 }
 
 func yaml2struct() {
-	str := ` 
+	str := `   
 - name_loc: ss
   age: 18
   vip: true
@@ -27,12 +27,12 @@ func yaml2struct() {
       gender: 男
       age: 33
 `
-	s, e := megatron.YamlToStruct(str, &megatron.Option{Recursive: true})
-	if e != nil {
+
+	if e := megatron.NewMegatron(str, megatron.Yaml_to_struct).
+		SetOptionRecursive().SetStructName("Mega").ToStruct().Error(); e != nil {
 		fmt.Println("error:", e)
 		return
 	}
-	fmt.Printf(s)
 }
 
 func json2struct() {
@@ -61,13 +61,20 @@ func json2struct() {
     }
 }
 `
-	s, e := megatron.Json2Struct(str, &megatron.Option{"", true})
 
-	if e != nil {
+	//设置输出到文件
+	/*if e := megatron.NewMegatron(str, megatron.Json_to_struct).
+		SetOutputFile("/Users/yangsen/Documents/go-ys/src/go-transformer/examples/a/b", true).
+		SetOptionRecursive().SetStructName("Mega").ToStruct().Error(); e != nil {
+		fmt.Println("error:", e)
+		return
+	}*/
+	//默认输出到标准输出
+	if e := megatron.NewMegatron(str, megatron.Json_to_struct).SetOptionRecursive().SetStructName("Mega").
+		ToStruct().Error(); e != nil {
 		fmt.Println("error:", e)
 		return
 	}
-	fmt.Printf(s)
 }
 
 func struct2ToJson() {

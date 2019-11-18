@@ -54,10 +54,13 @@ func mergeStructMaps(maps map[string]map[string]interface{}) string {
 		for filedKey, v := range m {
 			switch v.(type) {
 			case string:
+				//fmt.Println(filedKey, v)
 				if v == unknown {
 					//"k" is JsonKey.Tp
 					k := strings.Split(filedKey, ".")
-					//fmt.Println(filedKey, v)
+					if len(k) < 2 {
+						continue
+					}
 					if subObj, ok := maps[strings.TrimPrefix(k[1], "[]")]; ok {
 						m[k[0]] = subObj
 						if strings.HasPrefix(k[1], "[]") {
@@ -69,6 +72,7 @@ func mergeStructMaps(maps map[string]map[string]interface{}) string {
 					} else {
 						m[k[0]] = v
 					}
+					//fmt.Println("delete",filedKey,v)
 					delete(m, filedKey)
 				}
 			}

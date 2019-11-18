@@ -80,7 +80,7 @@ func json2struct() {
 }
 
 func struct2ToJson() {
-	f, _ := ioutil.ReadFile("/Users/yangsen/Documents/go-ys/src/go-transformer/examples/struct2json-3")
+	f, _ := ioutil.ReadFile("D:\\projects\\go-transformer\\src\\go-transformer\\examples\\struct2json-3")
 	str := string(f)
 
 	fmt.Println(optimus.StructsToJson(str))

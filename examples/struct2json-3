@@ -23,7 +23,7 @@ end
 */
 type Example struct {
 	Address []struct {
-		City          string `json:"city"`          // New York
+		City          string `json:"city"`          // #eg# New York
 		PostalCode    string `json:"postalCode"`    // 10021
 		State         string `json:"state"`         // NY
 		StreetAddress string `json:"streetAddress"` // 21 2nd Street

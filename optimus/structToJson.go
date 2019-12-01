@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"go-transformer/utils"
+	"gopkg.in/yaml.v2"
 	"io"
 	"strconv"
 	"strings"
@@ -16,6 +17,9 @@ import (
 const (
 	unknown            = "unknown"
 	specific_value_tag = "#eg#"
+
+	ConvertTypeJson = 1
+	ConvertTypeYaml = 2
 )
 
 type object struct {
@@ -28,7 +32,7 @@ type object struct {
 }
 
 type field struct {
-	JsonKey string
+	JsonKey string //json or yanl key
 	Tp      string
 	Value   interface{}
 }
@@ -36,18 +40,18 @@ type RealStruct struct {
 	Fields map[string]interface{}
 }
 
-func StructsToJson(str string) string {
+func StructsCube(str string, tp int) string {
 	bufReader := bufio.NewReader(strings.NewReader(str))
 	obj := new(object)
-	objs, err := splitStructs(bufReader, obj, "root", false)
+	objs, err := splitStructs(bufReader, obj, "root", false, tp)
 	if err != nil {
 		panic(err)
 	}
 	structMaps := convertStructsToMap(objs)
-	return mergeStructMaps(structMaps)
+	return mergeStructMaps(structMaps, tp)
 }
 
-func mergeStructMaps(maps map[string]map[string]interface{}) string {
+func mergeStructMaps(maps map[string]map[string]interface{}, tp int) string {
 	var subed []string
 	result := make(map[string]interface{})
 	for structName, m := range maps {
@@ -94,7 +98,13 @@ func mergeStructMaps(maps map[string]map[string]interface{}) string {
 		if moreThanOne {
 			buf.WriteString("\n\n********************************\n\n")
 		}
-		by, _ := json.MarshalIndent(v, "", "    ")
+		var by []byte
+		if tp == ConvertTypeJson {
+			by, _ = json.MarshalIndent(v, "", "    ")
+		} else if tp == ConvertTypeYaml {
+			by, _ = yaml.Marshal(v)
+		}
+
 		buf.Write(by)
 		moreThanOne = true
 	}
@@ -130,7 +140,7 @@ func convertStructsToMap(objs []*object) map[string]map[string]interface{} {
 	return structMaps
 
 }
-func splitStructs(reader *bufio.Reader, obj *object, parentKey string, nested bool) ([]*object, error) {
+func splitStructs(reader *bufio.Reader, obj *object, parentKey string, nested bool, tp int) ([]*object, error) {
 	obj.ParentKey = parentKey
 	objects := make([]*object, 0, 1)
 	multiComment := false
@@ -162,10 +172,14 @@ func splitStructs(reader *bufio.Reader, obj *object, parentKey string, nested bo
 		//new struct: especially for nested struct
 		if !strings.Contains(line, "type ") && strings.Contains(line, "{") {
 			newObj := new(object)
-			newObj.parseLine(line)
+			newObj.parseLine(line, tp)
 			obj.SubObj = append(obj.SubObj, newObj)
-			obj.CommonFileds = append(obj.CommonFileds, &field{JsonKey: newObj.JsonKey, Tp: newObj.Tp})
-			objRes, err := splitStructs(reader, newObj, obj.Name, true)
+			tmpTp := newObj.Tp
+			if strings.Contains(line, "[]struct") {
+				tmpTp = fmt.Sprintf("[]%s", newObj.Tp)
+			}
+			obj.CommonFileds = append(obj.CommonFileds, &field{JsonKey: newObj.JsonKey, Tp: tmpTp})
+			objRes, err := splitStructs(reader, newObj, obj.Name, true, tp)
 			if err != nil {
 				fmt.Println("newObj err:", err)
 				return nil, err
@@ -174,7 +188,7 @@ func splitStructs(reader *bufio.Reader, obj *object, parentKey string, nested bo
 			continue
 		}
 		if strings.Contains(line, "}") {
-			obj.parseLine(line)
+			obj.parseLine(line, tp)
 			o := *obj
 			objects = append(objects, &o)
 			if nested {
@@ -183,19 +197,23 @@ func splitStructs(reader *bufio.Reader, obj *object, parentKey string, nested bo
 			obj = new(object)
 			continue
 		}
-		obj.parseLine(line)
+		obj.parseLine(line, tp)
 	}
 	return objects, nil
 }
 
-func (obj *object) parseLine(line string) {
+func (obj *object) parseLine(line string, tp int) {
 	//the line declares struct, get struct name
 	// `type Friends struct {`  or  anonymous nested struct `FieldName struct {`
 	if strings.Contains(line, "struct") && strings.Contains(line, "{") {
 		obj.getStructName(line)
 		return
 	} else if strings.Contains(line, "}") {
-		obj.getJsonKey(line)
+		if tp == ConvertTypeJson {
+			obj.getJsonKey(line)
+		} else if tp == ConvertTypeYaml {
+			obj.getYamlKey(line)
+		}
 		return
 	}
 	// the field of struct
@@ -208,7 +226,11 @@ func (obj *object) parseLine(line string) {
 	f.JsonKey = arr[0]
 	f.Tp = arr[1]
 	if len(arr) > 2 && (strings.Contains(arr[2], "json:") || strings.Contains(arr[2], "json :")) {
-		f.getJsonKey(arr[2])
+		if tp == ConvertTypeJson {
+			f.getJsonKey(arr[2])
+		} else if tp == ConvertTypeYaml {
+			f.getYamlKey(arr[2])
+		}
 	} else {
 		f.JsonKey = utils.CamelToSnake(f.JsonKey)
 	}
@@ -253,11 +275,27 @@ func (obj *object) getJsonKey(line string) {
 	}
 }
 
+func (obj *object) getYamlKey(line string) {
+	k := doGetYamlTag(line)
+	if len(k) > 0 {
+		obj.JsonKey = k
+	} else {
+		obj.JsonKey = utils.CamelToSnake(obj.Name)
+	}
+}
+
 /*
 *************field***************
  */
 func (f *field) getJsonKey(js string) {
 	k := doGetJsonTag(js)
+	if len(k) > 0 {
+		f.JsonKey = k
+	}
+}
+
+func (f *field) getYamlKey(js string) {
+	k := doGetYamlTag(js)
 	if len(k) > 0 {
 		f.JsonKey = k
 	}
@@ -399,6 +437,28 @@ func doGetJsonTag(js string) string {
 	startInd := strings.Index(js, "json:")
 	if startInd < 0 {
 		startInd = strings.Index(js, "json :")
+	}
+	if startInd < 0 {
+		return ""
+	}
+	words := js[startInd+4:]
+	var name []rune
+	for _, r := range words {
+		if unicode.IsLetter(r) || r == '-' || r == '_' {
+			name = append(name, r)
+			valid = true
+		} else if valid {
+			break
+		}
+	}
+	return string(name)
+}
+
+func doGetYamlTag(js string) string {
+	valid := false
+	startInd := strings.Index(js, "yaml:")
+	if startInd < 0 {
+		startInd = strings.Index(js, "yaml :")
 	}
 	if startInd < 0 {
 		return ""
